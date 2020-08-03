@@ -28,11 +28,15 @@ processors:
 
 #output.elasticsearch:
 #  hosts: '${ELASTICSEARCH_HOSTS}'
+#  indices:
+#    - index: "metricbeat-elasticsearch-%{[agent.version]}-%{+yyyy.MM.dd}"
 #  username: '${ELASTICSEARCH_USERNAME:}'
 #  password: '${ELASTICSEARCH_PASSWORD:}'
 
 output.logstash:
   hosts: ["logstash:5044"]
+  indices:
+    - index: "metricbeat-logstash-%{[agent.version]}-%{+yyyy.MM.dd}"
 
 setup.kibana:
   host: "http://kibana:5601"

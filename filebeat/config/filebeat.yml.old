@@ -1,0 +1,135 @@
+###
+# https://www.sarulabs.com/post/5/2019-08-12/sending-docker-logs-to-elasticsearch-and-kibana-with-filebeat.html
+###
+# + ignore_older: 24h
+
+
+filebeat.config.modules:
+    enabled: true
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: false
+
+metricbeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+
+filebeat.modules:
+  - module: docker
+    metricsets:
+      - "container"
+      - "cpu"
+      - "diskio"
+      - "healthcheck"
+      - "info"
+      #- "image"
+      - "memory"
+      - "network"
+    hosts: ["unix:///var/run/docker.sock"]
+    period: 10s
+    enabled: true
+
+filebeat.modules:
+  - module: system
+    syslog:
+      - enabled: true
+    auth:
+      - enabled: true
+
+filebeat.inputs:
+  - type: container
+    enabled: true
+    ignore_older: 24h
+    paths:
+      - "/var/lib/docker/containers/*/*.log"
+    tags: ["docker-logs"]
+  - type: docker
+    combine_partial: true
+    containers:
+      path: "/var/lib/docker/containers"
+      stream: "stdout"
+      ids:
+        - "*"
+  - type: log
+    enabled: true
+    ignore_older: 24h
+    paths:
+      /var/log/host-logs/mail.*
+    exclude_files: [".gz$"]
+    tags: ["host-mail"]
+
+processors:
+  - add_docker_metadata:
+    host: "unix:///var/run/docker.sock"
+
+  - decode_json_fields:
+    fields: ["message"]
+    target: "json"
+    overwrite_keys: true
+
+### Disable Index lifecycle policy
+setup.ilm.enabled: false
+
+#  - type: container
+#    paths:
+#      - "/var/lib/docker/containers/*/*.log"
+#  - processors:
+#    - add_docker_metadata:
+#        host: "unix:///var/run/docker.sock"
+#    - decode_json_fields:
+#        fields: ["message"]
+#        target: "json"
+#        overwrite_keys: true
+
+#logging.json: true
+### Disable logging filebeat internal metrics
+logging.metrics.enabled: true
+
+
+
+#output.elasticsearch:
+#  hosts: ["elasticsearch:9200"]
+#  indices:
+#    - index: "filebeat-elastic-%{[agent.version]}-%{+yyyy.MM.dd}"
+#      when.or:
+#        - equals:
+#            container.image.name: docker.elastic.co/beats/filebeat:7.2.0
+#        - equals:
+#            container.image.name: docker.elastic.co/elasticsearch/elasticsearch:7.2.0
+#        - equals:
+#            container.image.name: docker.elastic.co/kibana/kibana:7.2.0
+#    - index: "filebeat-apps-%{[agent.version]}-%{+yyyy.MM.dd}"
+
+queue.mem:
+  events: 4096
+  flush.min_events: 512
+  flush.timeout: 5s
+
+
+#output.elasticsearch:
+#  hosts: ["elasticsearch:9200"]
+#  indices:
+#     - index: "filebeat-elastic-%{[agent.version]}-%{+yyyy.MM.dd}"
+#  username: "elastic"
+#  password: "changeme"
+
+prospectors:
+  - paths: "/var/log/host-logs/apache2/access.log"
+    document_type: apache-access
+  - paths: "/var/log/host-logs/apache2/error.log"
+    document_type: apache-error
+
+output.logstash:
+  hosts: ["logstash:5044"]
+  protocol: "http"
+  indices:
+    - index: "filebeat-logstash-%{[agent.version]}-%{+yyyy.MM.dd}"
+
+#setup.template.settings:
+#  index.number_of_shards: 3
+
+setup.kibana:
+  host: "kibana:5601"
+  protocol: "http"
+  path: "/"
+

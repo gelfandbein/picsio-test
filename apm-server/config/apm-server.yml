@@ -1,0 +1,30 @@
+apm-server:
+  host: 0.0.0.0:8200
+  ### Real User Monitoring
+#  rum:
+#    enabled: true
+#    path: /kibana
+
+#  output:
+#     logstash:
+#       hosts: ["logstash:5044"]
+#       username: elastic
+#       password: changeme
+
+output:
+  elasticsearch:
+    hosts: ['http://elasticsearch:9200']
+    username: elastic
+    password: changeme
+
+setup:
+  kibana:
+    enabled: true
+    host: "kibana:5601"
+
+queue.mem.events: 4096
+monitoring.enabled: true
+monitoring.elasticsearch: true
+max_procs: 4
+
+

@@ -1,0 +1,107 @@
+######################################
+###################################### ELASTICSEARCH
+######################################
+  elasticsearch:
+    build:
+      context: elasticsearch/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    container_name: elasticsearch
+    image: elasticsearch
+    restart: unless-stopped
+    # depends_on:
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-f", "http://${ELASTIC_USER}:${ELASTIC_PASSWORD}@elasticsearch:9200/_cat/health"]
+      retries: 5
+    volumes:
+      - type: bind
+        source: ./elasticsearch/config/elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+        read_only: true
+      - type: volume
+        source: elasticsearch
+        target: /usr/share/elasticsearch/data
+    ports:
+      - "127.0.0.1:9200:9200"
+      - "127.0.0.1:9300:9300"
+    environment:
+      ### https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+      - discovery.type=single-node
+      ### main password
+      - "ELASTIC_PASSWORD=changeme"
+      - "ES_JAVA_OPTS=-Xmx256m -Xms256m"
+    #  - node.name=es01
+    #  - cluster.name=docker-cluster
+    #  - discovery.seed_hosts=es02,es03
+    #  - cluster.initial_master_nodes=es01,es02,es03
+    #  - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - localnet
+
+#  es01:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
+#    container_name: es01
+#    environment:
+#      - node.name=es01
+#      - cluster.name=docker-cluster
+#      - discovery.seed_hosts=es02,es03
+#      - cluster.initial_master_nodes=es01,es02,es03
+#      - bootstrap.memory_lock=true
+#      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+#    volumes:
+#      - data01:/usr/share/elasticsearch/data
+#      # - ./es01.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+#    ports:
+#      - 127.0.0.1:9200:9200
+#    networks:
+#      - localnet
+
+#  es02:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
+#    container_name: es02
+#    environment:
+#      - node.name=es02
+#      - cluster.name=docker-cluster
+#      - discovery.seed_hosts=es01,es03
+#      - cluster.initial_master_nodes=es01,es02,es03
+#      - bootstrap.memory_lock=true
+#      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+#    volumes:
+#      - data02:/usr/share/elasticsearch/data
+#    ports:
+#      - 127.0.0.1:9201:9200
+#    networks:
+#      - localnet
+
+#  es03:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
+#    container_name: es03
+#    environment:
+#      - node.name=es03
+#      - cluster.name=docker-cluster
+#      - discovery.seed_hosts=es01,es02
+#      - cluster.initial_master_nodes=es01,es02,es03
+#      - bootstrap.memory_lock=true
+#      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+#    volumes:
+#      - data03:/usr/share/elasticsearch/data
+#    ports:
+#      - 127.0.0.1:9202:9200
+#    networks:
+#      - localnet

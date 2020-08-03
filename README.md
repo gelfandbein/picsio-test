@@ -27,10 +27,9 @@
 # Help
 
 useful links:
-https://www.elastic.co/guide/en/elastic-stack-get-started/current/get-started-docker.html
-https://github.com/elastic/stack-docs/blob/master/docs/en/getting-started/get-started-docker.asciidoc
-https://www.digitalocean.com/community/tutorials/how-to-install-and-manage-supervisor-on-ubuntu-and-debian-vps
-https://rtfm.co.ua/linux-supervisor-upravlenie-processami-i-servisami/
-https://docs.docker.com/config/containers/multi-service_container/
-curl --verbose http://elastic:changeme@127.0.0.1:9200
-https://www.portainer.io
+- https://www.elastic.co/guide/en/elastic-stack-get-started/current/get-started-docker.html
+- https://github.com/elastic/stack-docs/blob/master/docs/en/getting-started/get-started-docker.asciidoc
+- https://www.digitalocean.com/community/tutorials/how-to-install-and-manage-supervisor-on-ubuntu-and-debian-vps
+- https://rtfm.co.ua/linux-supervisor-upravlenie-processami-i-servisami/
+- https://docs.docker.com/config/containers/multi-service_container/
+- curl --verbose http://elastic:changeme@127.0.0.1:9200

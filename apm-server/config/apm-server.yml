@@ -1,9 +1,9 @@
 apm-server:
   host: 0.0.0.0:8200
+#    path: /kibana
   ### Real User Monitoring
 #  rum:
 #    enabled: true
-#    path: /kibana
 
 setup.kibana.host: "kibana:5601"
 # setup.dashboards.enabled: true

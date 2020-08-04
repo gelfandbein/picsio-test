@@ -29,9 +29,7 @@ services:
       retries: 5
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - type: volume
-        source: portainer
-        target: /data
+      - "portainer_data:/data"
     ports:
       - "9000:9000"
     networks:
@@ -58,8 +56,8 @@ services:
       - kibana
       - portainer
     volumes:
-      - "${PWD}/nginx/conf.d:/etc/nginx/conf.d:ro"
-      - "${PWD}/nginx/logs:/var/log/nginx:ro"
+      - "./nginx/conf.d:/etc/nginx/conf.d:ro"
+      - "./nginx/logs:/var/log/nginx:rw"
     ports:
       - "8181:80/tcp"
 #    environment:
@@ -83,19 +81,11 @@ services:
       test: ["CMD", "curl", "-s", "-f", "http://localhost:9600"]
       retries: 5
     volumes:
-      - type: bind
-        source: ./logstash/config/logstash.yml
-        target: /usr/share/logstash/config/logstash.yml
-        read_only: true
-      - type: bind
-        source: ./logstash/pipeline
-        target: /usr/share/logstash/pipeline
-        read_only: true
-      - type: bind
-        source: ./logstash/logs
-        target: /usr/share/logstash/logs
-        read_only: false
-#      - "${PWD}/logstash/log4j2.properties:/usr/share/logstash/config/log4j2.properties:ro"
+      - "./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro"
+      - "./logstash/pipeline:/usr/share/logstash/pipeline:ro"
+      - "./logstash/logs:/usr/share/logstash/logs:rw"
+#      - "./logstash/log4j2.properties:/usr/share/logstash/config/log4j2.properties:ro"
+      - "logstash_data:/usr/share/logstash/data"
     ports:
       - "127.0.0.1:5000:5000/tcp"
       - "127.0.0.1:5000:5000/udp"
@@ -120,16 +110,15 @@ services:
     image: elasticsearch
     hostname: elasticsearch
     restart: unless-stopped
-    # depends_on:
+#    depends_on:
+#      - logstash
     healthcheck:
       test: ["CMD", "curl", "-s", "-f", "http://${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_PASSWORD}@localhost:9200/_cat/health"]
       retries: 5
     volumes:
-      - "${PWD}/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro"
-      - type: volume
-        source: elasticsearch
-        target: /usr/share/elasticsearch/data
-#      - "${PWD}/elasticsearch/logs:/usr/share/elasticsearch/logs:ro"
+      - "./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro"
+      - "elasticsearch_data:/usr/share/elasticsearch/data"
+#      - "./elasticsearch/logs:/usr/share/elasticsearch/logs:ro"
     ports:
       - "127.0.0.1:9200:9200"
       - "127.0.0.1:9300:9300"
@@ -163,7 +152,8 @@ services:
       test: ["CMD", "curl", "-s", "-f", "http://localhost:5601"]
       retries: 5
     volumes:
-      - "${PWD}/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro"
+      - "kibana_data:/usr/share/kibana/data"
+      - "./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro"
     ports:
       - "5601:5601"
     networks:
@@ -190,8 +180,8 @@ services:
         # https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
       - --strict.perms=false
     volumes:
-      - "${PWD}/config/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro"
-#      - "${PWD}/apm-server/logs:/usr/share/apm-server/logs:ro"
+      - "./apm-server/config/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro"
+#      - "./apm-server/logs:/usr/share/apm-server/logs:ro"
     links:
       - elasticsearch
       - kibana
@@ -219,12 +209,13 @@ services:
 #    healthcheck:
 #      test: ["CMD", "curl", "-s", "-f", "http://filebeat:8200/polls"]
 #      retries: 5
-#    command: filebeat -e -strict.perms=false
+    command:
+# filebeat -e -strict.perms=false
         # https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
       - --strict.perms=false
     volumes:
-      - "${PWD}/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
-#      - "${PWD}/filebeat/modules.d:/usr/share/filebeat/modules.d:ro"
+      - "./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+#      - "./filebeat/modules.d:/usr/share/filebeat/modules.d:ro"
       - "/var/lib/docker/containers:/usr/share/filebeat/docker/containers:ro"
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "/var/log/mail.log:/var/log/host-logs/mail.log:ro"
@@ -261,34 +252,13 @@ services:
         # https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
       - --strict.perms=false
     volumes:
-      - type: bind
-        source: ./metricbeat/config/metricbeat.yml
-        target: /usr/share/metricbeat/metricbeat.yml
-        read_only: true
-      - type: bind
-        source: /sys/fs/cgroup
-        target: /hostfs/sys/fs/cgroup
-        read_only: true
-      - type: bind
-        source: /proc
-        target: /hostfs/proc
-        read_only: true
-      - type: bind
-        source: /
-        target: /hostfs
-        read_only: true
-      - type: bind
-        source: ./metricbeat/modules.d
-        target: /usr/share/metricbeat/modules.d
-        read_only: true
-#      - type: bind
-#        source: /var/lib/docker
-#        target: /var/lib/docker
-#        read_only: true
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-        read_only: true
+      - "./metricbeat/config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro"
+      - "/sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro"
+      - "/proc:/hostfs/proc:ro"
+      - "/:/hostfs"
+      - "./metricbeat/modules.d:/usr/share/metricbeat/modules.d:ro"
+#      - /var/lib/docker:/var/lib/docker:ro
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
 #    ports:
 #      - '127.0.0.1:8200:8200'
 #    environment:
@@ -306,9 +276,13 @@ services:
 ########################################## MISC
 ##########################################
 volumes:
-  elasticsearch:
+  logstash_data:
     driver: local
-  portainer:
+  elasticsearch_data:
+    driver: local
+  kibana_data:
+    driver: local
+  portainer_data:
     driver: local
 #  data01:
 #    driver: local

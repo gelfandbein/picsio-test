@@ -23,6 +23,7 @@
  - DOCKEROPTS='-H tcp://0.0.0.0:4243 -H unix:///var/run/docker.sock' - to local docker defaults
  - logstash input 5000>5044
  - added docker-ui DockStation & Portainer
+ - added limits to containers: WARNING: No swap limit support
 
 # Help
 

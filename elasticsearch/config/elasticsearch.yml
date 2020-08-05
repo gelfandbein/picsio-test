@@ -3,16 +3,17 @@
 
 cluster.name: "docker-cluster"
 network.host: 0.0.0.0
+logger.level: INFO
 
 discovery.zen.minimum_master_nodes: 1
 
-### https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-xpack.html
-# bootstrap.memory_lock: true
 xpack.monitoring.enabled: true
 xpack.license.self_generated.type: trial
 xpack.security.enabled: true
 
 # Monitoring provides insight to your hardware performance and load
 xpack.monitoring.collection.enabled: false
-# xpack.monitoring.ui.container.elasticsearch.enabled: true
+
+### https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-xpack.html
+bootstrap.memory_lock: true
 

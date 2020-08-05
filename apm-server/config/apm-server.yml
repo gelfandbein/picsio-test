@@ -5,13 +5,12 @@ apm-server:
 #  rum:
 #    enabled: true
 
-setup.kibana.host: "kibana:5601"
-# setup.dashboards.enabled: true
 max_procs: 4
 queue.mem.events: 4096
 logging.level: info
+setup.kibana.host: "kibana:5601"
 
-# logging.to_files: false
+logging.to_files: false
 
 # xpack.monitoring.enabled: false
 # xpack.monitoring.elasticsearch:

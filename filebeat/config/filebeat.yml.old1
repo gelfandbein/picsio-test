@@ -17,29 +17,24 @@ filebeat.autodiscover:
   providers:
     - type: docker
       hints.enabled: true
-
-#filebeat.autodiscover:
-#  providers:
-#    - type: docker
-#      hints.enabled: true
-#      templates:
-#        - condition:
-#            contains:
-#              docker.container.name: "nginx"
-#          config:
-#            - module: nginx
-#              access:
-#                input:
-#                  type: docker
-#                  containers:
-#                    ids: "${data.docker.container.id}"
-#                    stream: "stdout"
-#              error:
-#                input:
-#                  type: docker
-#                  containers:
-#                    ids: "${data.docker.container.id}"
-#                    stream: "stderr"
+      templates:
+        - condition:
+            contains:
+              docker.container.name: "nginx"
+          config:
+            - module: nginx
+              access:
+                input:
+                  type: docker
+                  containers:
+                    ids: "${data.docker.container.id}"
+                    stream: "stdout"
+              error:
+                input:
+                  type: docker
+                  containers:
+                    ids: "${data.docker.container.id}"
+                    stream: "stderr"
 
 
 # work
@@ -99,31 +94,31 @@ processors:
 ##########################################
 ################################# OUTPUT #
 ##########################################
-#output.logstash:
-#  hosts: ["logstash"]
-#  loadbalance: true
-#  indices:
-#    - index: "filebeat-logstash-%{+yyyy.MM.dd}"
-#  username: "elastic"
-#  password: "changeme"
+output.logstash:
+  hosts: ["logstash"]
+  loadbalance: true
+  indices:
+    - index: "filebeat-logstash-%{+yyyy.MM.dd}"
+  username: "elastic"
+  password: "changeme"
 
 
 ### OUT ONLY TO ELASTICSEARCH !!!
-xpack.monitoring.enabled: true
-output.elasticsearch:
-  hosts: ["elasticsearch:9200"]
-  indices:
-     - index: "filebeat-elasticsearch-%{+yyyy.MM.dd}"
-  username: "elastic"
-  password: "changeme"
+#xpack.monitoring.enabled: true
+#output.elasticsearch:
+#  hosts: ["elasticsearch:9200"]
+#  indices:
+#     - index: "filebeat-elasticsearch-%{+yyyy.MM.dd}"
+#  username: "elastic"
+#  password: "changeme"
 
 
 # Write Filebeat own logs only to file to avoid catching them with itself in docker log files
 logging.level: error
 logging.to_syslog: false
-#loggins.metrice.enabled: false
+loggins.metrice.enabled: false
 ### Disable logging filebeat internal metrics
-#logging.metrics.enabled: true
+logging.metrics.enabled: true
 
 #logging.to_files: false
 #logging.files:

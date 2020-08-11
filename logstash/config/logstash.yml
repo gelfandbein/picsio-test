@@ -2,8 +2,8 @@
 http.host: "0.0.0.0"
 #node.name: logstash
 
-#log.level: info
-#path.logs: /usr/share/logstash/logs
+log.level: info
+# path.logs: /usr/share/logstash/logs
 
 # monitoring.enabled: false
 

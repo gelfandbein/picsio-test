@@ -1,0 +1,51 @@
+heartbeat.monitors:
+- type: http
+  id: service-status
+  name: nGinx Status
+  hosts: ["http://nginx:80/"]
+  check.response.status: [200]
+  schedule: '@every 60s'
+
+#- type: tcp
+#  id: my-host-services
+#  name: My Containers
+#  hosts: ["localhost"]
+#  ports: [80, 9200, 9600, 5601]
+#  schedule: '@every 5s'
+
+#- type: http
+#  schedule: '@every 15s'
+#  name: HTTP to hosts
+#  urls:
+#    - http://elasticsearch:9200
+#    - http://kibana:5601
+#    - http://logstash:9600
+#    - http://nginx:80
+
+- type: icmp
+  schedule: '@every 15s'
+  name: ICMP to hosts
+  hosts:
+    - elasticsearch
+    - kibana
+    - logstash
+    - nginx
+
+- type: icmp
+  id: ping-google
+  name: Google Ping
+  hosts: ["google.com.ua"]
+  schedule: '*/5 * * * * * *'
+
+heartbeat.scheduler:
+  limit: 10
+
+
+processors:
+- add_cloud_metadata: ~
+
+output.elasticsearch:
+  hosts: "elasticsearch:9200"
+  username: "elastic"
+  password: "changeme"
+

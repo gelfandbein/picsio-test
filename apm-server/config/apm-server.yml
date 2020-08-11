@@ -1,5 +1,7 @@
 apm-server:
   host: 0.0.0.0:8200
+  frontend.enabled: true
+  frontend.allow_origins: "*"
 #    path: /kibana
   ### Real User Monitoring
 #  rum:
@@ -7,23 +9,28 @@ apm-server:
 
 max_procs: 4
 queue.mem.events: 4096
-logging.level: info
+logging.to_files: false
+logging.level: INFO
+logging.selectors: [ "beat", "service" ]
+
 setup.kibana.host: "kibana:5601"
 
-logging.to_files: false
-
-# xpack.monitoring.enabled: false
-# xpack.monitoring.elasticsearch:
 # monitoring.enabled: true
-# monitoring.elasticsearch: true
+
+# X-Pack
+xpack.monitoring.enabled: true
+xpack.monitoring.elasticsearch:
+  hosts: [ "elasticsearch:9200" ]
+  username: "elastic"
+  password: "changeme"
 
 output:
   logstash:
-    hosts: ["http://logstash:5044"]
+    hosts: [ "logstash:5044" ]
 
 #output:
 #  elasticsearch:
-#    hosts: ['http://elasticsearch:9200']
+#    hosts: ['elasticsearch:9200']
 #    protocol "http"
 #    username: elastic
 #    password: changeme

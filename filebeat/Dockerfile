@@ -2,10 +2,16 @@ ARG ELK_VERSION
 
 FROM docker.elastic.co/beats/filebeat:${ELK_VERSION}
 
-CMD mkdir /usr/share/filebeat/docker && mkdir /usr/share/filebeat/logs
+# VOLUME /usr/share/filebeat/logs/nginx
 
+# CMD mkdir /usr/share/filebeat/docker && mkdir /usr/share/filebeat/logs
 
-#volumes:
-#    - /path/to/myElk/log/nginx:/etc/logs/nginx # логи nginx
-#            - /path/to/myElk/filebeat:/etc/filebeat
+# RUN filebeat modules enable system nginx logstash
+
+#COPY logs/access.log /usr/share/filebeat/logs/nginx/access.log
+#COPY logs/error.log /usr/share/filebeat/logs/nginx/error.log
+
+# RUN filebeat setup --dashboards
+# RUN filebeat setup -e
+
 #            - /path/to/myElk/filebeat/tmp:/tmp/filebeat

@@ -1,19 +1,32 @@
 ###
-#
+#  the default discovery settings are unsuitable for production use; at least one of
+#  [discovery.seed_hosts, discovery.seed_providers, cluster.initial_master_nodes] must be configured
 
-cluster.name: "docker-cluster"
+#node.name: "elasticsearch"
+#cluster.name: "picsio-cluster"
+#cluster.initial_master_nodes: "elasticsearch"
 network.host: 0.0.0.0
 logger.level: INFO
 
-discovery.zen.minimum_master_nodes: 1
+#discovery.seed_hosts: "elasticsearch"
+#discovery.zen.minimum_master_nodes: 1
+discovery.type: "single-node"
 
-xpack.monitoring.enabled: true
+
+# X-Pack
 xpack.license.self_generated.type: trial
+xpack.monitoring.enabled: true    # deprecated in future
 xpack.security.enabled: true
 
-# Monitoring provides insight to your hardware performance and load
-xpack.monitoring.collection.enabled: false
+# Monitoring provides insight to your hardware performance and load <--- WTF parameter?))
+# xpack.monitoring.collection.enabled: true
 
 ### https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-xpack.html
 bootstrap.memory_lock: true
+
+### elasticsearch-head webui addon 
+http.cors.enabled: true
+http.cors.allow-origin: "/.*/"
+# http.cors.allow-headers: Authorization
+http.cors.allow-credentials: true
 

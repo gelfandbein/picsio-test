@@ -1,12 +1,18 @@
-#!/bin/sh
+#!/bin/bash
 
 ### starting services at start container
-echo "export TERM=dumb" >> ~/.bashrc
-TZ=Europe/Kiev
-ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+echo 'export TERM=dumb' >> ~/.bashrc
+echo '<br><b>nGinx for Docker</b><br>' >> /usr/share/nginx/html/index.html
+
+### timezone done by volumes in docker-compose
+# TZ=Europe/Kiev
+# ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+shellinaboxd -t -b -p 12345 --no-beep -s '/top:nobody:nogroup:/:top'
 
 service nginx start
-shellinaboxd -t -b -p 12345 --no-beep -s '/top:nobody:nogroup:/:top' && tail -F /var/log/*.log
+
+# && tail -F /var/log/*.log
 
 ### for "daemon" mode by container
 if [ "$1" = "-d" ]

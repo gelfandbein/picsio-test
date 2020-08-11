@@ -1,17 +1,24 @@
 
 server.name: kibana
 server.host: 0.0.0.0
+server.basePath: /kibana
+server.rewriteBasePath: false
 
-# server.basePath: "/kibana"
 logging.verbose: false
+logging.dest: stdout
+
 
 # elasticsearch.url: "http://elasticsearch:9200"
 elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+monitoring.kibana.collection.enabled: false
 monitoring.ui.container.elasticsearch.enabled: true
+# monitoring.ui.elasticsearch.url: "http://elasticsearch:9200"
 
 ## X-Pack security credentials
 #
+xpack.monitoring.collection.enabled: true
+# xpack.monitoring.elasticsearch.url: "http://elasticsearch:9200"
 elasticsearch.username: elastic
 elasticsearch.password: changeme
-# xpack.monitoring.ui.container.elasticsearch.enabled: true
+# xpack.monitoring.ui.container.elasticsearch.enabled: true         # deprecated in future
 

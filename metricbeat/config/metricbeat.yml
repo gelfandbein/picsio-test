@@ -2,10 +2,25 @@ metricbeat.config.modules:
   path: ${path.config}/modules.d/*.yml
   reload.enabled: false
 
-metricbeat.autodiscover:
-  providers:
-    - type: docker
-      hints.enabled: true
+xpack.monitoring.elasticsearch.collection.enabled: true
+#xpack.monitoring.collection.enabled: true
+#xpack.monitoring.ui.elasticsearch.username: elastic
+#xpack.monitoring.ui.elasticsearch.password: changeme
+
+setup.dashboards.enabled: true
+
+#metricbeat.autodiscover:
+#  providers:
+#  - type: docker
+#    hints.enabled: true
+#  templates:
+#  - condition:
+#    contains:
+#      docker.container.image: nginx
+#    config:
+#    - module: nginx
+#      metricsets: ["stubstatus"]
+#      hosts: "${data.host}:${data.port}"
 
 metricbeat.modules:
   - module: docker
@@ -15,30 +30,73 @@ metricbeat.modules:
       - "diskio"
       - "healthcheck"
       - "info"
-      #- "image"
+      - "image"
       - "memory"
       - "network"
     hosts: ["unix:///var/run/docker.sock"]
-    period: 10s
+    period: 15s
     enabled: true
+  - module: nginx
+    metricsets: ["stubstatus"]
+    enabled: true
+    period: 15s
+    hosts: ["http://nginx"]
+    server_status_path: "nginx_status"
+  - module: logstash
+    metricsets:
+      - node
+      - node_stats
+    period: 15s
+    hosts: ["logstash:9600"]
+    xpack.enabled: true
+  - module: elasticsearch
+    metricsets:
+      - node
+      - node_stats
+      - cluster_stats
+      - index
+      - index_recovery
+      - shard
+    period: 15s
+    hosts: ["elasticsearch:9200"]
+    xpack.enabled: true
+    username: "elastic"
+    password: "changeme"
+  - module: kibana
+    metricsets:
+      - stats
+    period: 15s
+    hosts: ["kibana:5601"]
+    # basepath: "/kibana"
+    username: "elastic"
+    password: "changeme"
+    xpack.enabled: true
+
+#  - module: mysql
+#    metricsets: ["status"]
+#    hosts: ["tcp(mysql:3306)/"]
+#    username: root
+#    password: ${MYSQL_PASSWORD}
 
 processors:
   - add_cloud_metadata: ~
   - add_docker_metadata: ~
 
-#output.elasticsearch:
-#  hosts: '${ELASTICSEARCH_HOSTS}'
-#  indices:
-#    - index: "metricbeat-elasticsearch-%{[agent.version]}-%{+yyyy.MM.dd}"
-#  username: '${ELASTICSEARCH_USERNAME:}'
-#  password: '${ELASTICSEARCH_PASSWORD:}'
-
-output.logstash:
-  hosts: ["logstash:5044"]
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
   indices:
-    - index: "metricbeat-logstash-%{[agent.version]}-%{+yyyy.MM.dd}"
+    - index: "metricbeat-elasticsearch-%{+yyyy.MM.dd}"
+  username: 'elastic'
+  password: 'changeme'
+
+#output.logstash:
+#  hosts: ["logstash:5044"]
+#  indices:
+#    - index: "metricbeat-logstash-%{+yyyy.MM.dd}"
 
 setup.kibana:
   host: "http://kibana:5601"
+  username: elastic
+  password: changeme
 
 

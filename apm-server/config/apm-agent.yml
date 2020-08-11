@@ -1,13 +1,10 @@
 
-Start your application with the javaagent flag
+# Start your application with the javaagent flag
+# Add the -javaagent flag and configure the agent with system properties.
+# Set required service name (allowed characters: a-z, A-Z, 0-9, -, _, and space)
+# Set custom APM Server URL (default: http://localhost:8200)
+# Set the base package of your application
 
-Add the -javaagent flag and configure the agent with system properties.
-
-Set required service name (allowed characters: a-z, A-Z, 0-9, -, _, and space)
-Set custom APM Server URL (default: http://localhost:8200)
-Set the base package of your application
-
-Copy snippet
 java -javaagent:/path/to/elastic-apm-agent-<version>.jar \
      -Delastic.apm.service_name=my-application \
      -Delastic.apm.server_urls=http://localhost:8200 \

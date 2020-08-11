@@ -1,10 +1,14 @@
-version: '3.5'
+version: '3.8'
+
+x-logging:
+  &default
+  options:
+    max-size: '1m'
+    max-file: '3'
+  driver: json-file
+
+
 services:
-# + docker-ui
-# + 127.0.0.1 to local bind port
-# + ..
-# + portainer
-# + links
 
 ######################################
 ###################################### EXTENDS
@@ -16,25 +20,48 @@ services:
 ######################################
 ###################################### DOCKER-UI
 ######################################
-  portainer:
-    build: ./portainer
-    image: portainer:picsio
-    # privileged: true
-    container_name: portainer
-    command: -H unix:///var/run/docker.sock
-    hostname: portainer
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000"]
-#      test: ["CMD-SHELL", "curl -f http://localhost || exit 1"]
-      retries: 5
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "portainer_data:/data"
-    ports:
-      - "9000:9000"
-    networks:
-      - localnet
+#  portainer:
+#    build:
+#      context: portainer/
+#      shm_size: '1gb'
+#    image: portainer:picsio
+#    # privileged: true
+#    container_name: portainer
+#    command: -H unix:///var/run/docker.sock
+#    hostname: portainer
+#    restart: always
+##    healthcheck:
+##      test: ["CMD", "curl", "-f", "http://elastic:changeme@localhost:9000"]
+##      test: ["CMD-SHELL", "curl -f http://localhost || exit 1"]
+##      retries: 5
+#    volumes:
+#      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+#      - "portainer_data:/data"
+#    ports:
+#      - "9000:9000"
+#    networks:
+#      - localnet
+
+######################################
+###################################### ELASTICSEARCH-HEAD
+######################################
+#  elasticsearch-head:
+#    build:
+#      context: elasticsearch/head/
+#    image: elasticsearch-head:picsio
+#    container_name: elasticsearch-head
+#    hostname: elasticsearch-head
+#    restart: always
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:9100"]
+#      retries: 5
+#    depends_on:
+#      - nginx
+#      - elasticsearch
+#    links:
+#      - elasticsearch
+#    networks:
+#      - localnet
 
 ######################################
 ###################################### NGINX
@@ -42,16 +69,24 @@ services:
   nginx:
     build:
       context: nginx/
-      shm_size: '1gb'
+#      shm_size: '1gb'
     env_file:
       - ./nginx/.env
     image: nginx:picsio
+    logging: *default
     container_name: nginx
     restart: always
     hostname: nginx
-    # command: /tmp/start.sh
+    domainname: pics.io
+    # entrypoint: ["wait-for-it.sh", "-s" , "-t", "20", ":kibana:5601", "--"]
+    # command: /tmp/start.sh   # exec nginx -g 'daemon off;'"
+    command: sh -c "/wait && /start.sh -d"
+    environment:
+      WAIT_HOSTS: kibana:5601, elasticsearch:9200, logstash:9600
     healthcheck:
-      test: ["CMD", "curl", "-s", "-f", "http://localhost:80"]
+      test: ["CMD", "curl", "-s", "-f", "http://elastic:changeme@localhost:8181"]
+      interval: 60s
+      timeout: 15s
       retries: 5
     #links:
     #  - portainer
@@ -59,14 +94,30 @@ services:
       - elasticsearch
       - logstash
       - kibana
-      - portainer
     volumes:
-      - "./nginx/conf.d:/etc/nginx/conf.d:ro"
-      - "./nginx/logs:/var/log/nginx:rw"
+#      - type: volume
+#        source: nginx_logs
+#        target: /var/log/nginx
+#        read_only: false
+      - type: tmpfs               # or use 'tmpfs'
+        target: /var/cache/nginx
+      - type: tmpfs
+        target: /run
+      - type: bind
+        source: ./nginx/config/nginx.conf
+        target: /etc/nginx/nginx.conf
+        # read_only: true
+      #- type: bind
+        #source: ./nginx/logs
+        #target: /var/log/nginx
+        #read_only: false
+      - "./nginx/config/containers.conf:/etc/nginx/conf.d/default.conf:ro"
+      - "./nginx/config/proxy_params:/etc/nginx/proxy_params:ro"
+      - "./nginx/config/htpasswd.elk:/etc/nginx/htpasswd.elk"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
     ports:
       - "8181:80/tcp"
-#    environment:
-#      - "DOCKEROPTS='-H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock'"
     networks:
       - localnet
 
@@ -83,18 +134,24 @@ services:
     restart: unless-stopped
     hostname: logstash
     healthcheck:
-      test: ["CMD", "curl", "-s", "-f", "http://localhost:9600"]
+      test: ["CMD", "curl", "-s", "-f", "http://elastic:changeme@localhost:9600"]
+      interval: 30s
+      timeout: 15s
       retries: 5
     volumes:
-      - "logstash_data:/usr/share/logstash/data"
+      # - "logstash_data:/usr/share/logstash/data"
       - "./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro"
+      - "./logstash/config/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro"
+      - "./logstash/config/log4j2.properties:/usr/share/logstash/config/log4j2.properties:ro"
       - "./logstash/pipeline:/usr/share/logstash/pipeline:ro"
-#      - "./logstash/log4j2.properties:/usr/share/logstash/config/log4j2.properties:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+      - "./logstash/logs/:/usr/share/logstash/logs/:rw"
     ports:
       - "127.0.0.1:5000:5000/tcp"
       - "127.0.0.1:5000:5000/udp"
-      - "127.0.0.1:5044:5044"
-      - "127.0.0.1:9600:9600"
+      - "127.0.0.1:5044:5044"      # beats port
+      - "127.0.0.1:9600:9600"      # api port
     environment:
       - "LS_JAVA_OPTS=-Xmx512m -Xms512m"
 #    depends_on:
@@ -118,10 +175,14 @@ services:
 #      - logstash
     healthcheck:
       test: ["CMD", "curl", "-s", "-f", "http://elastic:changeme@localhost:9200/_cat/health"]
+      interval: 30s
+      timeout: 15s
       retries: 5
     volumes:
       - "elasticsearch_data:/usr/share/elasticsearch/data"
       - "./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
     ports:
       - "127.0.0.1:9200:9200"
       - "127.0.0.1:9300:9300"
@@ -129,9 +190,6 @@ services:
 #      - kibana
 #      - logstash
     environment:
-      ### https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
-      - discovery.type=single-node
-      ### main password
       - "ELASTIC_PASSWORD=changeme"
       - "ES_JAVA_OPTS=-Xmx512m -Xms512m"
     ulimits:
@@ -154,16 +212,22 @@ services:
     container_name: kibana
     hostname: kibana
     restart: unless-stopped
+    environment:
+      - "TZ=${HOST_TZ}"
     healthcheck:
-      test: ["CMD", "curl", "-s", "-f", "http://localhost:5601"]
+      test: ["CMD", "curl", "-s", "-f", "http://elastic:changeme@localhost:5601"]
+      interval: 30s
+      timeout: 15s
       retries: 5
     volumes:
       - "kibana_data:/usr/share/kibana/data"
       - "./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
     links:
       - elasticsearch
     ports:
-      - "5601:5601"
+      - "127.0.0.1:5601:5601"
     networks:
       - localnet
     depends_on:
@@ -173,74 +237,83 @@ services:
 ##########################################
 ########################################## APM-SERVER
 ##########################################
-  apm-server:
-    build:
-      context: apm-server/
-      args:
-        ELK_VERSION: $ELK_VERSION
-    image: apm-server:picsio
-    hostname: apm-server
-    container_name: apm-server
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-s", "-f", "http://localhost:8200"]
-      retries: 5
-    command:
-        # Disable strict permission checking on 'apm-server.yml' configuration file
-        # https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
-      - --strict.perms=false
-    volumes:
-      - "./apm-server/config/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro"
-    links:
-      - elasticsearch
-      - kibana
-      - logstash
-    ports:
-      - '127.0.0.1:8200:8200'
-    networks:
-      - localnet
-    depends_on:
-      - elasticsearch
-      - kibana
+#  apm-server:
+#    build:
+#      context: apm-server/
+#      args:
+#        ELK_VERSION: $ELK_VERSION
+#    image: apm-server:picsio
+#    hostname: apm-server
+#    container_name: apm-server
+#    restart: unless-stopped
+#    healthcheck:
+#      test: ["CMD", "curl", "-s", "-f", "http://localhost:8200"]
+#      retries: 5
+#    command:
+#        # Disable strict permission checking on 'apm-server.yml' configuration file
+#        # https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
+#      - --strict.perms=false
+#    volumes:
+#      - "./apm-server/config/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro"
+#    links:
+#      - elasticsearch
+#      - kibana
+#      - logstash
+#    ports:
+#      - '127.0.0.1:8200:8200'
+#    networks:
+#      - localnet
+#    depends_on:
+#      - elasticsearch
+#      - kibana
 
 ##########################################
 ########################################## FILEBEAT
 ##########################################
-  filebeat:
-    build:
-      context: filebeat/
-      args:
-        ELK_VERSION: $ELK_VERSION
-    hostname: filebeat
-    image: filebeat:picsio
-    user: root
-    restart: unless-stopped
-    container_name: filebeat
-#    healthcheck:
-#      test: ["CMD", "curl", "-s", "-f", "http://filebeat:8200/polls"]
-#      retries: 5
-    command:
-# filebeat -e -strict.perms=false
-        # https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
-      - --strict.perms=false
-    volumes:
-      - "./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
-      - "/var/lib/docker/containers:/usr/share/filebeat/docker/containers:ro"
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "/var/log/mail.log:/var/log/host-logs/mail.log:ro"
-      - "/var/log/apache2/access.log:/var/log/host-logs/apache2/access.log:ro"
-      - "/var/log/apache2/error.log:/var/log/host-logs/apache2/error.log:ro"
-#    ports:
-#      - '127.0.0.1:8200:8200'
-#    environment:
-#      - setup.kibana.host: kibana:5601
-#      - output.elasticsearch.hosts=["elasticsearch:9200"]
-    links:
-      - logstash
-    networks:
-      - localnet
-    depends_on:
-      - logstash
+#  filebeat:
+#    build:
+#      context: filebeat/
+#      args:
+#        ELK_VERSION: $ELK_VERSION
+#    hostname: filebeat
+#    image: filebeat:picsio
+#    user: root
+#    restart: unless-stopped
+#    container_name: filebeat
+##    command: filebeat setup
+##    healthcheck:
+##      test: ["CMD", "curl", "-s", "-f", "http://filebeat:8200/polls"]
+##      retries: 5
+#    command:
+#        # https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
+#      - --strict.perms=false
+#    volumes:
+#      - type: volume
+#        source: filebeat_data
+#        target: /usr/share/filebeat/data
+##      - type: volume
+##        source: nginx_logs
+##        target: /var/log/nginx
+##        read_only: true
+#      - "/var/lib/docker/containers/:/usr/share/filebeat/docker/containers/:ro"
+#      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+#      - "./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+##    ports:
+##      - '127.0.0.1:8200:8200'
+##    environment:
+##      - setup.kibana.host: kibana:5601
+##      - output.elasticsearch.hosts=["elasticsearch:9200"]
+#    links:
+#      - nginx
+#      - logstash
+#      - kibana
+#      - elasticsearch
+#    networks:
+#      - localnet
+#    depends_on:
+#      - logstash
+#      - elasticsearch
+#      - kibana
 
 ##########################################
 ########################################## METRICBEAT
@@ -255,25 +328,25 @@ services:
     restart: unless-stopped
     hostname: metricbeat
     container_name: metricbeat
-#    healthcheck:
-#      test: ["CMD", "curl", "-s", "-f", "http://metricbeat:8200/polls"]
-#      retries: 5
+##    healthcheck:
+##      test: ["CMD", "curl", "-s", "-f", "http://elastic:changeme@localhost:8200/polls"]
+##      retries: 5
     command:
         # https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
       - --strict.perms=false
     volumes:
       - "./metricbeat/config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro"
-#      - "/sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro"
-#      - "/proc:/hostfs/proc:ro"
-#      - "/:/hostfs"
-#      - "./metricbeat/modules.d:/usr/share/metricbeat/modules.d:ro"
+##      - "/sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro"
+##      - "/proc:/hostfs/proc:ro"
+##      - "/:/hostfs"
+##      - "./metricbeat/modules.d:/usr/share/metricbeat/modules.d:ro"
       - "/var/lib/docker:/var/lib/docker:ro"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-#    ports:
-#      - '127.0.0.1:8200:8200'
-#    environment:
-#      - setup.kibana.host: kibana:5601
-#      - output.elasticsearch.hosts=["elasticsearch:9200"]
+##    ports:
+##      - '127.0.0.1:8200:8200'
+##    environment:
+##      - setup.kibana.host: kibana:5601
+##      - output.elasticsearch.hosts=["elasticsearch:9200"]
     links:
       - logstash
       - elasticsearch
@@ -282,24 +355,51 @@ services:
       - localnet
     depends_on:
       - logstash
+      - kibana
+      - elasticsearch
+
+##########################################
+########################################## HEARTBEAT
+##########################################
+  heartbeat:
+    build:
+      context: heartbeat/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    image: heartbeat:picsio
+    user: root
+    restart: unless-stopped
+    hostname: heartbeat
+    container_name: heartbeat
+    volumes:
+      - "./heartbeat/config/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml:ro"
+    links:
+      - logstash
+      - elasticsearch
+      - kibana
+    networks:
+      - localnet
+    depends_on:
+      - logstash
+      - kibana
+      - elasticsearch
 
 ##########################################
 ########################################## MISC
 ##########################################
 volumes:
+#  nginx_logs:
+#    driver: local
   logstash_data:
     driver: local
   elasticsearch_data:
     driver: local
   kibana_data:
     driver: local
-  portainer_data:
+  filebeat_data:
     driver: local
-#  data01:
-#    driver: local
-#  data02:
-#    driver: local
-#  data03:
+
+#  portainer_data:
 #    driver: local
 
 networks:

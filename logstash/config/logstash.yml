@@ -2,10 +2,10 @@
 http.host: "0.0.0.0"
 #node.name: logstash
 
+### "fatal", "error", "warn", "debug", "info", "trace"
 log.level: info
-# path.logs: /usr/share/logstash/logs
 
-# monitoring.enabled: false
+# monitoring.enabled: true
 
 ## X-Pack
 #
@@ -13,6 +13,4 @@ xpack.monitoring.enabled: true
 xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch:9200" ]
 xpack.monitoring.elasticsearch.username: elastic
 xpack.monitoring.elasticsearch.password: changeme
-
-
 

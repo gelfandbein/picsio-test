@@ -2,10 +2,11 @@ metricbeat.config.modules:
   path: ${path.config}/modules.d/*.yml
   reload.enabled: false
 
-xpack.monitoring.elasticsearch.collection.enabled: true
 #xpack.monitoring.collection.enabled: true
-#xpack.monitoring.ui.elasticsearch.username: elastic
-#xpack.monitoring.ui.elasticsearch.password: changeme
+#xpack.monitoring.elasticsearch.collection.enabled: true
+#xpack.monitoring.elasticsearch.hosts: ["elasticsearch:9200"]
+#xpack.monitoring.elasticsearch.username: elastic
+#xpack.monitoring.elasticsearch.password: changeme
 
 setup.dashboards.enabled: true
 
@@ -23,6 +24,15 @@ setup.dashboards.enabled: true
 #      hosts: "${data.host}:${data.port}"
 
 metricbeat.modules:
+#  - module: beat
+#    metricsets:
+#      - stats
+#      - state
+#    period: 15s
+#    hosts: ["http://filebeat:5066"]
+#    username: "elastic"
+#    password: "changeme"
+#    xpack.enabled: true
   - module: docker
     metricsets:
       - "container"
@@ -30,7 +40,7 @@ metricbeat.modules:
       - "diskio"
       - "healthcheck"
       - "info"
-      - "image"
+#      - "image"
       - "memory"
       - "network"
     hosts: ["unix:///var/run/docker.sock"]
@@ -49,6 +59,8 @@ metricbeat.modules:
     period: 15s
     hosts: ["logstash:9600"]
     xpack.enabled: true
+    username: "elastic"
+    password: "changeme"
   - module: elasticsearch
     metricsets:
       - node
@@ -85,14 +97,16 @@ processors:
 output.elasticsearch:
   hosts: ["elasticsearch:9200"]
   indices:
-    - index: "metricbeat-elasticsearch-%{+yyyy.MM.dd}"
-  username: 'elastic'
-  password: 'changeme'
+    - index: "metricbeat-%{+yyyy.MM.dd}"
+  username: elastic
+  password: changeme
 
 #output.logstash:
 #  hosts: ["logstash:5044"]
 #  indices:
-#    - index: "metricbeat-logstash-%{+yyyy.MM.dd}"
+#    - index: "metricbeat-%{+yyyy.MM.dd}"
+#  username: elastic
+#  password: changeme
 
 setup.kibana:
   host: "http://kibana:5601"

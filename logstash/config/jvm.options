@@ -1,0 +1,42 @@
+## JVM configuration
+
+# Xms represents the initial size of total heap space
+# Xmx represents the maximum size of total heap s
+-Djruby.compile.invokedynamic=true
+# Force Compilation
+-Djruby.jit.threshold=0
+# Make sure joni regexp interruptability is enabled
+-Djruby.regexp.interruptible=true
+
+## heap dumps
+
+# generate a heap dump when an allocation from the Java heap fails
+# heap dumps are created in the working directory of the JVM
+-XX:+HeapDumpOnOutOfMemoryError
+
+# specify an alternative path for heap dumps
+# ensure the directory exists and has sufficient space
+#-XX:HeapDumpPath=${LOGSTASH_HOME}/heapdump.hprof
+
+## GC logging
+-XX:+PrintGCDetails
+#-XX:+PrintGCTimeStamps
+#-XX:+PrintGCDateStamps
+#-XX:+PrintClassHistogram
+#-XX:+PrintTenuringDistribution
+#-XX:+PrintGCApplicationStoppedTime
+
+# log GC status to a file with time stamps
+# ensure the directory exists
+-Xloggc:${LS_GC_LOG_FILE}
+
+# Entropy source for randomness
+-Djava.security.egd=file:/dev/urandom
+
+# Copy the logging context from parent threads to children
+-Dlog4j2.isThreadContextMapInheritable=true
+
+
+
+
+

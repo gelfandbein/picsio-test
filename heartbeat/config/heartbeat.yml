@@ -3,6 +3,8 @@ heartbeat.monitors:
   id: service-status
   name: nGinx Status
   hosts: ["http://nginx:80/"]
+  username: "elastic"
+  password: "changeme"
   check.response.status: [200]
   schedule: '@every 60s'
 
@@ -46,6 +48,9 @@ processors:
 
 output.elasticsearch:
   hosts: "elasticsearch:9200"
+  indices:
+    - index: "metricbeat-%{+yyyy.MM.dd}"
   username: "elastic"
   password: "changeme"
+
 

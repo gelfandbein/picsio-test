@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ### starting services at start container
-echo 'export TERM=dumb' >> ~/.bashrc
+# echo 'export TERM=dumb' >> ~/.bashrc
 echo '<br><b>nGinx for Docker</b><br>' >> /usr/share/nginx/html/index.html
 
 ### timezone done by volumes in docker-compose
@@ -12,10 +12,8 @@ shellinaboxd -t -b -p 12345 --no-beep -s '/top:nobody:nogroup:/:top'
 
 service nginx start
 
-# && tail -F /var/log/*.log
-
 ### for "daemon" mode by container
-if [ "$1" = "-d" ]
+if [ "$1" = "-daemon" ]
  then
   while true
    do sleep 1000
@@ -30,3 +28,4 @@ fi
 
 ### for continuous run if needed
 # exec "$@"
+

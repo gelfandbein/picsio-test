@@ -31,8 +31,7 @@ services:
 #    hostname: portainer
 #    restart: always
 ##    healthcheck:
-##      test: ["CMD", "curl", "-f", "http://elastic:changeme@localhost:9000"]
-##      test: ["CMD-SHELL", "curl -f http://localhost || exit 1"]
+##      test: ["CMD", "curl", "-s", "-f", "http://localhost:9000"]
 ##      retries: 5
 #    volumes:
 #      - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -78,16 +77,19 @@ services:
     restart: always
     hostname: nginx
     domainname: pics.io
-    # entrypoint: ["wait-for-it.sh", "-s" , "-t", "20", ":kibana:5601", "--"]
-    # command: /tmp/start.sh   # exec nginx -g 'daemon off;'"
-    command: sh -c "/wait && /start.sh -d"
+    # entrypoint: nginx -g 'daemon off;'
+    # command: ["/wait-for-it.sh", "kibana:5601", "--", "/start.sh", "-d"]
+    entrypoint: sh -c "/wait && /start.sh -daemon"
     environment:
       WAIT_HOSTS: kibana:5601, elasticsearch:9200, logstash:9600
-    healthcheck:
-      test: ["CMD", "curl", "-s", "-f", "http://elastic:changeme@localhost:8181"]
-      interval: 60s
-      timeout: 15s
-      retries: 5
+      WAIT_HOSTS_TIMEOUT: 60
+      WAIT_SLEEP_INTERVAL: 30
+      WAIT_HOST_CONNECT_TIMEOUT: 30
+#    healthcheck:
+#      test: ["CMD", "curl", "-S", "-f", "--user", "elastic:changeme", "http://localhost:8181"]
+#      interval: 60s
+#      timeout: 15s
+#      retries: 5
     #links:
     #  - portainer
     depends_on:
@@ -117,7 +119,7 @@ services:
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"
     ports:
-      - "8181:80/tcp"
+      - "8181:80"
     networks:
       - localnet
 
@@ -134,7 +136,7 @@ services:
     restart: unless-stopped
     hostname: logstash
     healthcheck:
-      test: ["CMD", "curl", "-s", "-f", "http://elastic:changeme@localhost:9600"]
+      test: ["CMD", "curl", "-s", "-f", "http://localhost:9600"]
       interval: 30s
       timeout: 15s
       retries: 5
@@ -143,10 +145,11 @@ services:
       - "./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro"
       - "./logstash/config/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro"
       - "./logstash/config/log4j2.properties:/usr/share/logstash/config/log4j2.properties:ro"
+      - "./logstash/config/jvm.options:/usr/share/logstash/config/jvm.options:ro"
       - "./logstash/pipeline:/usr/share/logstash/pipeline:ro"
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"
-      - "./logstash/logs/:/usr/share/logstash/logs/:rw"
+#      - "./logstash/logs/:/usr/share/logstash/logs/:rw"
     ports:
       - "127.0.0.1:5000:5000/tcp"
       - "127.0.0.1:5000:5000/udp"
@@ -270,34 +273,34 @@ services:
 ##########################################
 ########################################## FILEBEAT
 ##########################################
-#  filebeat:
-#    build:
-#      context: filebeat/
-#      args:
-#        ELK_VERSION: $ELK_VERSION
-#    hostname: filebeat
-#    image: filebeat:picsio
-#    user: root
-#    restart: unless-stopped
-#    container_name: filebeat
+  filebeat:
+    build:
+      context: filebeat/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    hostname: filebeat
+    image: filebeat:picsio
+    user: root
+    restart: unless-stopped
+    container_name: filebeat
 ##    command: filebeat setup
 ##    healthcheck:
 ##      test: ["CMD", "curl", "-s", "-f", "http://filebeat:8200/polls"]
 ##      retries: 5
-#    command:
-#        # https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
-#      - --strict.perms=false
-#    volumes:
-#      - type: volume
-#        source: filebeat_data
-#        target: /usr/share/filebeat/data
+    command:
+        # https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
+      - --strict.perms=false
+    volumes:
+      - type: volume
+        source: filebeat_data
+        target: /usr/share/filebeat/data
 ##      - type: volume
 ##        source: nginx_logs
 ##        target: /var/log/nginx
 ##        read_only: true
-#      - "/var/lib/docker/containers/:/usr/share/filebeat/docker/containers/:ro"
-#      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-#      - "./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+      - "./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+      - "/var/lib/docker/containers/:/var/lib/docker/containers/:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
 ##    ports:
 ##      - '127.0.0.1:8200:8200'
 ##    environment:
@@ -308,12 +311,12 @@ services:
 #      - logstash
 #      - kibana
 #      - elasticsearch
-#    networks:
-#      - localnet
-#    depends_on:
-#      - logstash
-#      - elasticsearch
-#      - kibana
+    networks:
+      - localnet
+    depends_on:
+      - logstash
+      - elasticsearch
+      - kibana
 
 ##########################################
 ########################################## METRICBEAT

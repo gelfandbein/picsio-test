@@ -4,10 +4,19 @@
 
 - pipeline.id: main
   pipeline.workers: 5
+  pipeline.batch.size: 25
+  pipeline.ordered: auto
   path.config: "/usr/share/logstash/pipeline/main.conf"
+
+- pipeline.id: beats
+  pipeline.workers: 3
+  pipeline.batch.size: 5
+  pipeline.ordered: auto
+  path.config: "/usr/share/logstash/pipeline/beats.conf"
 
 - pipeline.id: nginx
   pipeline.workers: 1
-  pipeline.batch.size: 1
+  pipeline.batch.size: 5
+  pipeline.ordered: auto
   path.config: "/usr/share/logstash/pipeline/nginx.conf"
 

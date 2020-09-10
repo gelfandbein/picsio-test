@@ -39,7 +39,7 @@ filebeat.modules:
 filebeat.inputs:
   - type: container
     enabled: true
-    ignore_older: 24h
+    ignore_older: 1h
     paths:
       - "/var/lib/docker/containers/*/*.log"
     tags: ["docker-logs"]

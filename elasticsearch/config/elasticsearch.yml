@@ -25,8 +25,8 @@ xpack.security.enabled: true
 bootstrap.memory_lock: true
 
 ### elasticsearch-head webui addon 
-http.cors.enabled: true
-http.cors.allow-origin: "/.*/"
+#http.cors.enabled: true
+#http.cors.allow-origin: "/.*/"
 # http.cors.allow-headers: Authorization
-http.cors.allow-credentials: true
+#http.cors.allow-credentials: true
 
